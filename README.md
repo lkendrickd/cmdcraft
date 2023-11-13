@@ -27,3 +27,9 @@ The example commands are included in cmd/main.go
 
 With this in mind setup any flags if needed for your function.  Next, define your function and place it into a command.
 This will enable the function to be used in the cli framework.
+
+### Build the Binary
+
+```
+make build
+```
