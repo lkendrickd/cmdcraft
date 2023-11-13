@@ -1,5 +1,7 @@
 # CmdCraft CLI
 
+![cmdcraft logo](images/cmdcraft.png)
+
 CommandCraft is a versatile command-line interface (CLI) framework tool designed to handle a variety of commands and subcommands, providing a flexible and user-friendly experience.
 
 ## Features
