@@ -3,7 +3,6 @@ package cmdcraft
 import (
 	"flag"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 )
@@ -15,7 +14,6 @@ type Command struct {
 	Usage       string
 	Subcommands []Command
 	Flags       []Flag
-	InitFlags   func(*flag.FlagSet)
 	Handler     func(data interface{}) error
 	FlagValues  map[string]interface{}
 }
@@ -62,12 +60,12 @@ func (c *Command) CommandHelp() error {
 		}
 	}
 
-	log.Println(sb.String())
+	fmt.Print(sb.String())
 	return nil
 }
 
 // initFlags initializes the flags for a Command
-func (c *Command) initFlags(flagSet *flag.FlagSet) {
+func (c *Command) initFlags(flagSet *flag.FlagSet) error {
 	c.FlagValues = make(map[string]interface{})
 
 	for _, f := range c.Flags {
@@ -75,33 +73,41 @@ func (c *Command) initFlags(flagSet *flag.FlagSet) {
 		case "string":
 			var s string
 			flagSet.StringVar(&s, f.LongOption, "", f.Description)
-			flagSet.StringVar(&s, f.ShortOption, "", f.Description+" (short)")
+			if f.ShortOption != "" {
+				flagSet.StringVar(&s, f.ShortOption, "", f.Description+" (short)")
+			}
 			c.FlagValues[f.LongOption] = &s
 		case "int":
 			var i int
 			flagSet.IntVar(&i, f.LongOption, 0, f.Description)
-			flagSet.IntVar(&i, f.ShortOption, 0, f.Description+" (short)")
+			if f.ShortOption != "" {
+				flagSet.IntVar(&i, f.ShortOption, 0, f.Description+" (short)")
+			}
 			c.FlagValues[f.LongOption] = &i
 		case "bool":
 			var b bool
 			flagSet.BoolVar(&b, f.LongOption, false, f.Description)
-			flagSet.BoolVar(&b, f.ShortOption, false, f.Description+" (short)")
+			if f.ShortOption != "" {
+				flagSet.BoolVar(&b, f.ShortOption, false, f.Description+" (short)")
+			}
 			c.FlagValues[f.LongOption] = &b
-
 		case "float64":
 			var f64 float64
 			flagSet.Float64Var(&f64, f.LongOption, 0, f.Description)
-			flagSet.Float64Var(&f64, f.ShortOption, 0, f.Description+" (short)")
+			if f.ShortOption != "" {
+				flagSet.Float64Var(&f64, f.ShortOption, 0, f.Description+" (short)")
+			}
 			c.FlagValues[f.LongOption] = &f64
-
 		case "duration":
 			var d time.Duration
 			flagSet.DurationVar(&d, f.LongOption, 0, f.Description)
-			flagSet.DurationVar(&d, f.ShortOption, 0, f.Description+" (short)")
+			if f.ShortOption != "" {
+				flagSet.DurationVar(&d, f.ShortOption, 0, f.Description+" (short)")
+			}
 			c.FlagValues[f.LongOption] = &d
-
 		default:
-			panic(fmt.Sprintf("invalid flag type: %s", f.Type))
+			return fmt.Errorf("invalid flag type: %s for flag --%s", f.Type, f.LongOption)
 		}
 	}
+	return nil
 }

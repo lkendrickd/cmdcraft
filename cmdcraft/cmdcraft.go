@@ -3,7 +3,6 @@ package cmdcraft
 import (
 	"flag"
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -42,7 +41,7 @@ func (c *CommandCraft) CommandCraftHelp() error {
 		sb.WriteString("\n")
 	}
 
-	log.Println(sb.String())
+	fmt.Print(sb.String())
 	return nil
 }
 
@@ -67,27 +66,32 @@ func (c *CommandCraft) Execute(args []string) error {
 		}
 	}
 	if mainCmd == nil {
-		return fmt.Errorf("command not found")
+		return fmt.Errorf("command not found: %s", args[0])
 	}
 
 	// Check if there's a subcommand
 	if len(args) > 1 {
 		if args[1] == "help" || args[1] == "--help" || args[1] == "-h" {
-			mainCmd.CommandHelp()
-			return nil
+			return mainCmd.CommandHelp()
 		}
 
-		for _, subCmd := range mainCmd.Subcommands {
-			if subCmd.Name == args[1] {
+		for i := range mainCmd.Subcommands {
+			if mainCmd.Subcommands[i].Name == args[1] {
+				// Check if help is requested for subcommand
+				if len(args) > 2 && (args[2] == "help" || args[2] == "--help" || args[2] == "-h") {
+					return mainCmd.Subcommands[i].CommandHelp()
+				}
 				// Found a subcommand, now handle it
-				return handleSubCommand(&subCmd, args[2:])
+				return handleSubCommand(&mainCmd.Subcommands[i], args[2:])
 			}
 		}
 	}
 
 	// If no subcommand, process the main command
 	flagSet := flag.NewFlagSet(mainCmd.Name, flag.ContinueOnError)
-	mainCmd.initFlags(flagSet)
+	if err := mainCmd.initFlags(flagSet); err != nil {
+		return err
+	}
 	if err := flagSet.Parse(args[1:]); err != nil {
 		return err
 	}
@@ -97,7 +101,9 @@ func (c *CommandCraft) Execute(args []string) error {
 // handleSubCommand handles the execution of a subcommand
 func handleSubCommand(subCmd *Command, args []string) error {
 	flagSet := flag.NewFlagSet(subCmd.Name, flag.ContinueOnError)
-	subCmd.initFlags(flagSet)
+	if err := subCmd.initFlags(flagSet); err != nil {
+		return err
+	}
 	if err := flagSet.Parse(args); err != nil {
 		return err
 	}
